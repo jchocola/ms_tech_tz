@@ -156,7 +156,7 @@ class MainPage extends StatelessWidget {
                         ? 'Connected'
                         : 'Not Connected',
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
