@@ -7,8 +7,15 @@ import 'bloc/paywall_event.dart';
 import 'bloc/paywall_state.dart';
 
 /// Paywall page with subscription options
-class PaywallPage extends StatelessWidget {
+class PaywallPage extends StatefulWidget {
   const PaywallPage({super.key});
+
+  @override
+  State<PaywallPage> createState() => _PaywallPageState();
+}
+
+class _PaywallPageState extends State<PaywallPage> {
+  Subscription? _selectedSubscription;
 
   @override
   Widget build(BuildContext context) {
@@ -150,15 +157,16 @@ class PaywallPage extends StatelessWidget {
   Widget _buildSubscriptionPlans(BuildContext context) {
     return Column(
       children: Subscription.all.map((subscription) {
-        final isYearly = subscription.type == SubscriptionType.yearly;
+        final isSelected = _selectedSubscription?.id == subscription.id;
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: _SubscriptionCard(
             subscription: subscription,
+            isSelected: isSelected,
             onTap: () {
-              context.read<PaywallBloc>().add(
-                PurchaseRequested(subscriptionId: subscription.id),
-              );
+              setState(() {
+                _selectedSubscription = subscription;
+              });
             },
           ),
         );
@@ -170,16 +178,19 @@ class PaywallPage extends StatelessWidget {
     return BlocBuilder<PaywallBloc, PaywallState>(
       builder: (context, state) {
         final isLoading = state is PaywallLoading;
+        final hasSelection = _selectedSubscription != null;
+
         return SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: isLoading
+            onPressed: (isLoading || !hasSelection)
                 ? null
                 : () {
-                    // Default to yearly plan if no selection
                     context.read<PaywallBloc>().add(
-                      const PurchaseRequested(subscriptionId: 'yearly_plan'),
+                      PurchaseRequested(
+                        subscriptionId: _selectedSubscription!.id,
+                      ),
                     );
                   },
             style: ElevatedButton.styleFrom(
@@ -235,12 +246,19 @@ class PaywallPage extends StatelessWidget {
 /// Subscription card widget
 class _SubscriptionCard extends StatelessWidget {
   final Subscription subscription;
+  final bool isSelected;
   final VoidCallback onTap;
 
-  const _SubscriptionCard({required this.subscription, required this.onTap});
+  const _SubscriptionCard({
+    super.key,
+    required this.subscription,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Use isSelected for visual feedback, not isYearly
     final isYearly = subscription.type == SubscriptionType.yearly;
 
     return GestureDetector(
@@ -248,13 +266,19 @@ class _SubscriptionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isYearly ? const Color(0xFF1E3A8A) : Colors.white,
+          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isYearly ? const Color(0xFF1E3A8A) : Colors.grey[300]!,
-            width: 2,
+            color: isSelected ? const Color(0xFF1E3A8A) : (isYearly ? const Color(0xFF1E3A8A) : Colors.grey[300]!),
+            width: isSelected ? 3 : 2,
           ),
           boxShadow: [
+            if (isSelected)
+              BoxShadow(
+                color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
@@ -283,12 +307,10 @@ class _SubscriptionCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isYearly
-                              ? Colors.white
-                              : const Color(0xFF1E3A8A),
+                          color: isSelected ? Colors.white : const Color(0xFF1E3A8A),
                         ),
                       ),
-                      if (subscription.discount != null && isYearly) ...[
+                      if (subscription.discount != null && isSelected) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -316,7 +338,7 @@ class _SubscriptionCard extends StatelessWidget {
                     subscription.description,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isYearly ? Colors.white70 : Colors.grey[600],
+                      color: isSelected ? Colors.white70 : Colors.grey[600],
                     ),
                   ),
                 ],
@@ -328,7 +350,7 @@ class _SubscriptionCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: isYearly ? Colors.white : const Color(0xFF1E3A8A),
+                color: isSelected ? Colors.white : const Color(0xFF1E3A8A),
               ),
             ),
           ],
