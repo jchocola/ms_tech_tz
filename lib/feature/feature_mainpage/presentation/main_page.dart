@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
 import '../domain/entities/vpn_server.dart';
 import 'bloc/main_bloc.dart';
 import 'bloc/main_event.dart';
@@ -19,6 +20,34 @@ class MainPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          // Theme toggle button
+          StatefulBuilder(
+            builder: (context, setInnerState) {
+              return IconButton(
+                onPressed: () async {
+                  final currentTheme = await AdaptiveTheme.getThemeMode();
+                  if (currentTheme == AdaptiveThemeMode.dark) {
+                    AdaptiveTheme.of(context).setLight();
+                  } else {
+                    AdaptiveTheme.of(context).setDark();
+                  }
+                  setInnerState(() {});
+                },
+                icon: FutureBuilder<AdaptiveThemeMode?>(
+                  future: AdaptiveTheme.getThemeMode(),
+                  builder: (context, snapshot) {
+                    if (snapshot.data == AdaptiveThemeMode.dark) {
+                      return const Icon(Icons.light_mode_outlined);
+                    } else {
+                      return const Icon(Icons.dark_mode_outlined);
+                    }
+                  },
+                ),
+                color: Colors.white,
+                tooltip: 'Toggle theme',
+              );
+            },
+          ),
           BlocBuilder<MainBloc, MainState>(
             builder: (context, state) {
               bool isSubscribed = false;
