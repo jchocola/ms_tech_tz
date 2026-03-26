@@ -179,7 +179,7 @@ class MainPage extends StatelessWidget {
                   const SizedBox(height: 24),
                   // Status Text
                   Text(
-                    state is MainConnecting
+                    !isConnected && selectedServer != null
                         ? 'Connecting...'
                         : isConnected
                         ? 'Connected'
@@ -210,36 +210,61 @@ class MainPage extends StatelessWidget {
                       onPressed: () {
                         if (state is MainConnecting) return;
 
+                        // Toggle connection state
                         if (isConnected) {
+                          // Disconnect if currently connected
                           context.read<MainBloc>().add(
                             const DisconnectServer(),
                           );
-                        } else if (selectedServer != null) {
-                          context.read<MainBloc>().add(
-                            ConnectToServer(serverId: selectedServer!.id),
-                          );
+                        } else {
+                          // Connect if not connected
+                          if (selectedServer != null) {
+                            context.read<MainBloc>().add(
+                              ConnectToServer(serverId: selectedServer.id),
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isConnected
                             ? Colors.red
-                            : Colors.white,
-                        foregroundColor: isConnected
-                            ? Colors.white
                             : const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
                         elevation: 4,
                         shadowColor: Colors.black.withOpacity(0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(28),
                         ),
                       ),
-                      child: Text(
-                        isConnected ? 'Disconnect' : 'Connect',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: state is MainConnecting
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isConnected ? Icons.power_off : Icons.power,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isConnected ? 'Disconnect' : 'Connect',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ],

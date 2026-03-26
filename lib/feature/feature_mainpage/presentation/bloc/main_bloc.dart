@@ -85,8 +85,12 @@ class MainBloc extends Bloc<MainEvent, MainState> {
     Emitter<MainState> emit,
   ) async {
     try {
-      emit(const MainConnecting());
+      if (state is ServersLoaded) {
+        final currentState = state as ServersLoaded;
+        emit(currentState.copyWith(isConnected: false)); // Show loading state
+      }
       await vpnRepository.connect(event.serverId);
+      // Connection successful - stream will trigger state update
     } catch (e) {
       emit(MainError(message: 'Connection failed'));
     }
